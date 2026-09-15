@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 210" role="img" aria-labelledby="title desc">
+  <title id="title">THET Fund</title>
+  <desc id="desc">THET Fund logo with three people inside a red crescent</desc>
+  <path fill="#c8102e" d="M152 16c-47 3-86 38-99 83-15 51 13 100 60 108 30 5 60-10 79-35-20 13-42 20-62 16-40-8-62-49-50-91 10-37 37-66 72-81z"/>
+  <path fill="#c8102e" d="M116 191c32-3 63-23 86-54 13-18 23-34 34-53-18 8-36 22-50 40-16 21-39 47-70 67z"/>
+  <g fill="#132b91">
+    <circle cx="144" cy="91" r="12"/>
+    <path d="M110 123c14-18 35-23 52-13 12 7 17 20 16 32-15-8-30-8-44 1-13 8-23 20-33 35 3-19 4-37 9-55z"/>
+    <path d="M130 79l19-3-1 7-18 1z"/>
+  </g>
+  <g fill="#3f822d">
+    <circle cx="221" cy="59" r="14"/>
+    <path d="M181 103c14-23 39-33 63-26 18 6 27 18 29 32-22-7-39-4-55 8-16 12-27 29-42 46 5-23 1-40 5-60z"/>
+    <path d="M207 38l27-2 14 7-17 6-24-3z"/>
+    <path d="M199 40v18h3V42z"/>
+  </g>
+  <g fill="#17257e">
+    <path d="M192 104c19 2 36 13 44 29-20-3-35 0-50 10 3-16 4-28 6-39z"/>
+  </g>
+  <g fill="#c8102e">
+    <path d="M207 139c17-13 35-17 52-10-14 21-31 38-54 50-10 5-22-4-17-14 6-11 12-18 19-26z"/>
+  </g>
+  <g fill="#3f822d">
+    <path d="M265 46l4 8 9 1-7 6 2 9-8-5-8 5 2-9-7-6 9-1z"/>
+  </g>
+  <g fill="#17257e">
+    <path d="M262 25l3 7 8 1-6 5 2 8-7-4-7 4 2-8-6-5 8-1z"/>
+  </g>
+  <g fill="#e52b3b">
+    <path d="M285 30l5 11 12 1-9 8 3 12-11-6-11 6 3-12-9-8 12-1z"/>
+  </g>
+  <text x="310" y="132" fill="#050817" font-family="Arial, Helvetica, sans-serif" font-size="68" font-weight="700" letter-spacing="-2">THET</text>
+  <text x="493" y="132" fill="#050817" font-family="Arial, Helvetica, sans-serif" font-size="68" font-weight="300">Fund</text>
+</svg>
