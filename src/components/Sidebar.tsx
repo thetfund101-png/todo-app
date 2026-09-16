@@ -37,9 +37,9 @@ const NAV: { id: View; label: string; icon: JSX.Element }[] = [
 
 export function Sidebar({ view, onNavigate }: { view: View; onNavigate: (v: View) => void }) {
   return (
-    <aside className="hidden w-56 shrink-0 flex-col border-r border-slate-400/15 bg-white/60 px-4 py-6 dark:bg-teal-950/60 dark:border-teal-800 md:flex">
+    <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-400/15 bg-white/60 px-4 py-6 dark:bg-teal-950/60 dark:border-teal-800 md:flex">
       <div className="mb-8 px-2">
-        <img src="/thet-fund-logo.svg" alt="THET Fund" className="h-auto w-full max-w-[192px]" />
+        <img src="/thet-fund-logo.svg" alt="THET Fund" className="mx-auto h-auto w-full max-w-[220px]" />
         <p className="text-xs text-slate-500 dark:text-slate-400">Task manager</p>
       </div>
       <nav className="flex flex-col gap-1">
