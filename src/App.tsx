@@ -32,6 +32,13 @@ export default function App() {
 
   const categories = Array.from(new Set([...DEFAULT_CATEGORIES, ...customCategories]))
 
+  useEffect(() => {
+    const needsNormalization = tasks.some((task) => !Array.isArray(task.followUps))
+    if (needsNormalization) {
+      setTasks((current) => current.map((task) => ({ ...task, followUps: task.followUps ?? [] })))
+    }
+  }, [tasks, setTasks])
+
   // apply theme to <html> element
   useEffect(() => {
     const root = document.documentElement
@@ -137,6 +144,7 @@ export default function App() {
               onEdit={openEditModal}
               onDelete={handleDelete}
               onDuplicate={handleDuplicate}
+              onAddFollowUp={openEditModal}
             />
           )}
           {view === 'tasks' && (
@@ -147,6 +155,7 @@ export default function App() {
               onEdit={openEditModal}
               onDelete={handleDelete}
               onDuplicate={handleDuplicate}
+              onAddFollowUp={openEditModal}
             />
           )}
           {view === 'settings' && (
@@ -188,6 +197,7 @@ export default function App() {
           />
         </Modal>
       )}
+
 
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
     </div>

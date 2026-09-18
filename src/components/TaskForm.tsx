@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react'
-import { Task, TaskPriority, TaskStatus, STATUS_LABELS, PRIORITY_LABELS } from '../types/task'
+import { Task, TaskPriority, TaskStatus, STATUS_LABELS, PRIORITY_LABELS, FollowUp } from '../types/task'
 import { nowISO } from '../utils/dateUtils'
+import { addFollowUp, deleteFollowUp, toggleFollowUp } from '../utils/taskUtils'
 
 export function TaskForm({
   initial,
@@ -20,6 +21,9 @@ export function TaskForm({
   const [category, setCategory] = useState(initial.category)
   const [customCategory, setCustomCategory] = useState('')
   const [dueDate, setDueDate] = useState(initial.dueDate ?? '')
+  const [followUps, setFollowUps] = useState<FollowUp[]>(initial.followUps)
+  const [newFollowUpDate, setNewFollowUpDate] = useState('')
+  const [newFollowUpNote, setNewFollowUpNote] = useState('')
   const [error, setError] = useState('')
 
   const isNewCategory = category === '__new__'
@@ -39,8 +43,22 @@ export function TaskForm({
       status,
       category: finalCategory,
       dueDate: dueDate || null,
+      followUps,
       updatedAt: nowISO(),
     })
+  }
+
+  function handleAddFollowUp() {
+    if (!newFollowUpDate) return
+    const updated = addFollowUp(initial, {
+      id: crypto.randomUUID(),
+      date: newFollowUpDate,
+      note: newFollowUpNote.trim(),
+      completed: false,
+    })
+    setFollowUps(updated.followUps)
+    setNewFollowUpDate('')
+    setNewFollowUpNote('')
   }
 
   return (
@@ -105,6 +123,61 @@ export function TaskForm({
               </option>
             ))}
           </select>
+        </div>
+      </div>
+
+      <div className="border-t border-slate-400/15 pt-4 dark:border-teal-800">
+        <h3 className="font-medium text-ink dark:text-paper">Follow-ups</h3>
+        {followUps.length > 0 && (
+          <div className="mt-2 flex flex-col gap-2">
+            {followUps.map((followUp) => (
+              <div key={followUp.id} className="flex items-start gap-2 rounded-lg bg-paper/70 px-3 py-2 dark:bg-teal-800/60">
+                <input
+                  type="checkbox"
+                  checked={followUp.completed}
+                  onChange={() => setFollowUps((current) => toggleFollowUp({ ...initial, followUps: current }, followUp.id).followUps)}
+                  className="mt-1 accent-teal-700"
+                  aria-label={`Mark follow-up for ${followUp.date} as complete`}
+                />
+                <div className="min-w-0 flex-1">
+                  <p className={`text-sm font-medium text-ink dark:text-paper ${followUp.completed ? 'line-through opacity-50' : ''}`}>
+                    {followUp.date}
+                  </p>
+                  {followUp.note && <p className="text-xs text-slate-500 dark:text-slate-400">{followUp.note}</p>}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFollowUps((current) => deleteFollowUp({ ...initial, followUps: current }, followUp.id).followUps)}
+                  className="text-xs text-red-500 hover:text-red-700"
+                >
+                  Delete
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="mt-3 grid grid-cols-[auto_1fr_auto] gap-2">
+          <input
+            type="date"
+            value={newFollowUpDate}
+            onChange={(e) => setNewFollowUpDate(e.target.value)}
+            aria-label="New follow-up date"
+            className="rounded-lg border border-slate-400/30 bg-transparent px-2 py-2 text-sm text-ink focus:border-teal-700 dark:text-paper dark:[color-scheme:dark]"
+          />
+          <input
+            value={newFollowUpNote}
+            onChange={(e) => setNewFollowUpNote(e.target.value)}
+            placeholder="Follow-up note"
+            className="min-w-0 rounded-lg border border-slate-400/30 bg-transparent px-3 py-2 text-sm text-ink placeholder:text-slate-400 focus:border-teal-700 dark:text-paper"
+          />
+          <button
+            type="button"
+            onClick={handleAddFollowUp}
+            disabled={!newFollowUpDate}
+            className="rounded-lg bg-gold-500 px-3 py-2 text-sm font-medium text-white hover:bg-gold-400 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Add
+          </button>
         </div>
       </div>
 

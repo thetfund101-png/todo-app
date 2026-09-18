@@ -7,6 +7,13 @@ export interface Subtask {
   done: boolean
 }
 
+export interface FollowUp {
+  id: string
+  date: string
+  note: string
+  completed: boolean
+}
+
 export interface Task {
   id: string
   title: string
@@ -15,6 +22,7 @@ export interface Task {
   priority: TaskPriority
   category: string
   dueDate: string | null // ISO date string, e.g. 2026-09-18
+  followUps: FollowUp[]
   createdAt: string
   updatedAt: string
   subtasks: Subtask[]

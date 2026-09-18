@@ -3,12 +3,14 @@ import { Task, TaskStatus, STATUS_LABELS } from '../types/task'
 import { TaskCard } from './TaskCard'
 import { TaskFilterBar } from './TaskFilter'
 import { TaskFilters, SortKey, filterTasks, sortTasks } from '../utils/taskUtils'
+import { getOpenFollowUps } from '../utils/taskUtils'
 
-const TABS: { id: TaskStatus | 'all'; label: string }[] = [
+const TABS: { id: TaskStatus | 'follow-up' | 'all'; label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'todo', label: STATUS_LABELS.todo },
   { id: 'in-progress', label: STATUS_LABELS['in-progress'] },
   { id: 'completed', label: STATUS_LABELS.completed },
+  { id: 'follow-up', label: 'Pending follow-up' },
 ]
 
 export function TasksPage({
@@ -18,6 +20,7 @@ export function TasksPage({
   onEdit,
   onDelete,
   onDuplicate,
+  onAddFollowUp,
 }: {
   tasks: Task[]
   categories: string[]
@@ -25,8 +28,9 @@ export function TasksPage({
   onEdit: (task: Task) => void
   onDelete: (id: string) => void
   onDuplicate: (task: Task) => void
+  onAddFollowUp: (task: Task) => void
 }) {
-  const [tab, setTab] = useState<TaskStatus | 'all'>('all')
+  const [tab, setTab] = useState<TaskStatus | 'follow-up' | 'all'>('all')
   const [filters, setFilters] = useState<TaskFilters>({
     status: 'all',
     priority: 'all',
@@ -36,7 +40,11 @@ export function TasksPage({
   const [sortKey, setSortKey] = useState<SortKey>('newest')
 
   const visible = useMemo(() => {
-    const tabFiltered = tab === 'all' ? tasks : tasks.filter((t) => t.status === tab)
+    const tabFiltered = tab === 'all'
+      ? tasks
+      : tab === 'follow-up'
+      ? tasks.filter((t) => getOpenFollowUps(t).length > 0)
+      : tasks.filter((t) => t.status === tab)
     const filtered = filterTasks(tabFiltered, filters)
     return sortTasks(filtered, sortKey)
   }, [tasks, tab, filters, sortKey])
@@ -77,6 +85,7 @@ export function TasksPage({
               onEdit={onEdit}
               onDelete={onDelete}
               onDuplicate={onDuplicate}
+              onAddFollowUp={onAddFollowUp}
             />
           ))}
         </div>

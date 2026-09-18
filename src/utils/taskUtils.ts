@@ -1,4 +1,4 @@
-import { Task, TaskPriority, TaskStatus } from '../types/task'
+import { FollowUp, Task, TaskPriority, TaskStatus } from '../types/task'
 import { getDueState, nowISO } from './dateUtils'
 
 export function createEmptyTask(defaults: { priority?: TaskPriority; category?: string }): Task {
@@ -10,10 +10,32 @@ export function createEmptyTask(defaults: { priority?: TaskPriority; category?: 
     priority: defaults.priority ?? 'medium',
     category: defaults.category ?? 'General',
     dueDate: null,
+    followUps: [],
     createdAt: nowISO(),
     updatedAt: nowISO(),
     subtasks: [],
   }
+}
+
+export function getOpenFollowUps(task: Task): FollowUp[] {
+  return task.followUps.filter((followUp) => !followUp.completed)
+}
+
+export function addFollowUp(task: Task, followUp: FollowUp): Task {
+  return { ...task, followUps: [...task.followUps, followUp] }
+}
+
+export function toggleFollowUp(task: Task, followUpId: string): Task {
+  return {
+    ...task,
+    followUps: task.followUps.map((followUp) =>
+      followUp.id === followUpId ? { ...followUp, completed: !followUp.completed } : followUp,
+    ),
+  }
+}
+
+export function deleteFollowUp(task: Task, followUpId: string): Task {
+  return { ...task, followUps: task.followUps.filter((followUp) => followUp.id !== followUpId) }
 }
 
 export type SortKey = 'newest' | 'oldest' | 'due' | 'priority' | 'alpha'

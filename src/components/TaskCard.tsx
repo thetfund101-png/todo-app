@@ -1,7 +1,7 @@
 import { ReactNode } from 'react'
 import { Task } from '../types/task'
 import { formatDueLabel, getDueState } from '../utils/dateUtils'
-import { subtaskProgress } from '../utils/taskUtils'
+import { getOpenFollowUps, subtaskProgress } from '../utils/taskUtils'
 
 const PRIORITY_DOT: Record<Task['priority'], string> = {
   urgent: 'bg-red-500',
@@ -30,15 +30,18 @@ export function TaskCard({
   onEdit,
   onDelete,
   onDuplicate,
+  onAddFollowUp,
 }: {
   task: Task
   onToggleComplete: (id: string) => void
   onEdit: (task: Task) => void
   onDelete: (id: string) => void
   onDuplicate: (task: Task) => void
+  onAddFollowUp: (task: Task) => void
 }) {
   const dueState = getDueState(task.dueDate)
   const progress = subtaskProgress(task)
+  const openFollowUps = getOpenFollowUps(task)
   const isDone = task.status === 'completed'
 
   const dueColor =
@@ -88,6 +91,30 @@ export function TaskCard({
           <span>{task.category}</span>
           {task.dueDate && <span className={dueColor}>{formatDueLabel(task.dueDate)}</span>}
         </div>
+
+        {openFollowUps.length > 0 && (
+          <button
+            onClick={() => onAddFollowUp(task)}
+            className="mt-2 flex items-center gap-1.5 rounded-md bg-gold-400/15 px-2 py-1 text-xs font-medium text-gold-500 hover:bg-gold-400/25"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            {openFollowUps.length} open follow-up{openFollowUps.length === 1 ? '' : 's'}
+          </button>
+        )}
+
+        {isDone && openFollowUps.length === 0 && (
+          <button
+            onClick={() => onAddFollowUp(task)}
+            className="mt-2 flex items-center gap-1.5 text-xs font-medium text-teal-700 hover:text-teal-900 dark:text-gold-400 dark:hover:text-gold-300"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Add follow-up
+          </button>
+        )}
 
         {progress && (
           <div className="mt-2">
