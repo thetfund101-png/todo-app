@@ -55,6 +55,52 @@ export function SettingsPage({
     URL.revokeObjectURL(url)
   }
 
+  function exportWord() {
+    const escapeHtml = (value: string) =>
+      value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+    const formatFollowUps = (task: Task) =>
+      task.followUps.length === 0
+        ? 'None'
+        : task.followUps
+            .map((followUp) => `${followUp.completed ? '[Completed] ' : ''}${followUp.date}${followUp.note ? ` - ${followUp.note}` : ''}`)
+            .join('<br />')
+
+    const rows = tasks
+      .map(
+        (task) => `<tr>
+          <td>${escapeHtml(task.title)}</td>
+          <td>${escapeHtml(task.description || '')}</td>
+          <td>${escapeHtml(task.status)}</td>
+          <td>${escapeHtml(task.priority)}</td>
+          <td>${escapeHtml(task.category)}</td>
+          <td>${escapeHtml(task.dueDate || 'None')}</td>
+          <td>${formatFollowUps(task)}</td>
+        </tr>`,
+      )
+      .join('')
+    const html = `<html><head><meta charset="utf-8"><style>
+      body { font-family: Arial, sans-serif; color: #173f3a; }
+      h1 { color: #123f3b; }
+      table { border-collapse: collapse; width: 100%; }
+      th { background: #123f3b; color: white; }
+      th, td { border: 1px solid #b9c8c5; padding: 8px; text-align: left; vertical-align: top; }
+      tr:nth-child(even) { background: #f1f5f4; }
+    </style></head><body>
+      <h1>THET Fund Task Tracker</h1>
+      <p>Exported ${new Date().toLocaleDateString()}</p>
+      <table><thead><tr>
+        <th>Task</th><th>Description</th><th>Status</th><th>Priority</th><th>Category</th><th>Due date</th><th>Follow-ups</th>
+      </tr></thead><tbody>${rows}</tbody></table>
+    </body></html>`
+    const blob = new Blob([html], { type: 'application/msword' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `thet-fund-tasks-${new Date().toISOString().slice(0, 10)}.doc`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -138,6 +184,9 @@ export function SettingsPage({
           </button>
           <button onClick={exportCSV} className="rounded-lg border border-slate-400/25 px-3.5 py-2 text-sm font-medium text-ink hover:bg-white dark:text-paper dark:hover:bg-teal-800">
             Export as CSV
+          </button>
+          <button onClick={exportWord} className="rounded-lg border border-slate-400/25 px-3.5 py-2 text-sm font-medium text-ink hover:bg-white dark:text-paper dark:hover:bg-teal-800">
+            Export as Word
           </button>
           <button onClick={() => fileInputRef.current?.click()} className="rounded-lg border border-slate-400/25 px-3.5 py-2 text-sm font-medium text-ink hover:bg-white dark:text-paper dark:hover:bg-teal-800">
             Import tasks
