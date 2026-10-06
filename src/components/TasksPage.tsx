@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Task, TaskStatus, STATUS_LABELS } from '../types/task'
 import { TaskCard } from './TaskCard'
 import { TaskFilterBar } from './TaskFilter'
-import { TaskFilters, SortKey, filterTasks, sortTasks } from '../utils/taskUtils'
+import { TaskFilters, SortKey, TaskQuickFilter, applyQuickFilter, filterTasks, sortTasks } from '../utils/taskUtils'
 import { getOpenFollowUps } from '../utils/taskUtils'
 
 const TABS: { id: TaskStatus | 'follow-up' | 'all'; label: string }[] = [
@@ -11,6 +11,15 @@ const TABS: { id: TaskStatus | 'follow-up' | 'all'; label: string }[] = [
   { id: 'in-progress', label: STATUS_LABELS['in-progress'] },
   { id: 'completed', label: STATUS_LABELS.completed },
   { id: 'follow-up', label: 'Pending follow-up' },
+]
+
+const QUICK_FILTERS: { id: TaskQuickFilter; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'active', label: 'Active' },
+  { id: 'completed', label: 'Completed' },
+  { id: 'overdue', label: 'Overdue' },
+  { id: 'today', label: 'Due today' },
+  { id: 'upcoming', label: 'Upcoming' },
 ]
 
 export function TasksPage({
@@ -31,6 +40,7 @@ export function TasksPage({
   onAddFollowUp: (task: Task) => void
 }) {
   const [tab, setTab] = useState<TaskStatus | 'follow-up' | 'all'>('all')
+  const [quickFilter, setQuickFilter] = useState<TaskQuickFilter>('all')
   const [filters, setFilters] = useState<TaskFilters>({
     status: 'all',
     priority: 'all',
@@ -45,13 +55,30 @@ export function TasksPage({
       : tab === 'follow-up'
       ? tasks.filter((t) => getOpenFollowUps(t).length > 0)
       : tasks.filter((t) => t.status === tab)
-    const filtered = filterTasks(tabFiltered, filters)
+    const filtered = filterTasks(applyQuickFilter(tabFiltered, quickFilter), filters)
     return sortTasks(filtered, sortKey)
-  }, [tasks, tab, filters, sortKey])
+  }, [tasks, tab, quickFilter, filters, sortKey])
 
   return (
     <div className="flex flex-col gap-4">
       <TaskFilterBar filters={filters} onFiltersChange={setFilters} categories={categories} sortKey={sortKey} onSortChange={setSortKey} />
+
+      <div className="flex flex-wrap gap-2" aria-label="Quick task filters">
+        {QUICK_FILTERS.map((filter) => (
+          <button
+            key={filter.id}
+            onClick={() => setQuickFilter(filter.id)}
+            aria-pressed={quickFilter === filter.id}
+            className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+              quickFilter === filter.id
+                ? 'bg-teal-900 text-white dark:bg-gold-500'
+                : 'border border-slate-400/25 text-slate-500 hover:bg-white dark:text-slate-300 dark:hover:bg-teal-800'
+            }`}
+          >
+            {filter.label}
+          </button>
+        ))}
+      </div>
 
       <div className="flex gap-1 border-b border-slate-400/15 dark:border-teal-800">
         {TABS.map((t) => (

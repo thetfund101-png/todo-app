@@ -4,11 +4,13 @@ import { useEffect, useState } from 'react'
  * Persists state to localStorage under `key`. Reads the existing value (if
  * any) on first render, and writes back to localStorage on every change.
  */
-export function useLocalStorage<T>(key: string, initialValue: T) {
+export function useLocalStorage<T>(key: string, initialValue: T, migrate?: (stored: T) => T) {
   const [value, setValue] = useState<T>(() => {
     try {
       const stored = window.localStorage.getItem(key)
-      return stored !== null ? (JSON.parse(stored) as T) : initialValue
+      if (stored === null) return initialValue
+      const parsed = JSON.parse(stored) as T
+      return migrate ? migrate(parsed) : parsed
     } catch (err) {
       console.error(`Could not read localStorage key "${key}":`, err)
       return initialValue

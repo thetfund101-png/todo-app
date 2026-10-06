@@ -1,4 +1,4 @@
-export type View = 'dashboard' | 'tasks' | 'settings'
+export type View = 'dashboard' | 'tasks' | 'calendar' | 'settings'
 
 const NAV: { id: View; label: string; icon: JSX.Element }[] = [
   {
@@ -20,6 +20,16 @@ const NAV: { id: View; label: string; icon: JSX.Element }[] = [
       <>
         <path d="M9 6h11M9 12h11M9 18h11" />
         <path d="M4 6h.01M4 12h.01M4 18h.01" />
+      </>
+    ),
+  },
+  {
+    id: 'calendar',
+    label: 'Calendar',
+    icon: (
+      <>
+        <rect x="3" y="5" width="18" height="16" rx="2" />
+        <path d="M16 3v4M8 3v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 17h.01M12 17h.01" />
       </>
     ),
   },

@@ -25,7 +25,7 @@ export function Dashboard({
     .filter((t) => t.status !== 'completed' && (getDueState(t.dueDate) === 'today' || getDueState(t.dueDate) === 'overdue'))
     .slice(0, 5)
 
-  const recent = [...tasks].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5)
+  const recent = [...tasks].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 5)
   const openFollowUps = tasks
     .flatMap((task) => getOpenFollowUps(task).map((followUp) => ({ task, followUp })))
     .slice(0, 5)

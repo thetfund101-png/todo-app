@@ -125,7 +125,7 @@ export function TaskCard({
               />
             </div>
             <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
-              {progress.done}/{progress.total} subtasks
+              {progress.done} of {progress.total} subtasks completed
             </span>
           </div>
         )}

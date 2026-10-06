@@ -1,17 +1,30 @@
 export function TaskStats({
   stats,
 }: {
-  stats: { total: number; todo: number; inProgress: number; completed: number; onHold: number; overdue: number; dueToday: number }
+  stats: {
+    total: number
+    todo: number
+    inProgress: number
+    completed: number
+    onHold: number
+    overdue: number
+    dueToday: number
+    dueThisWeek: number
+    subtasksCompleted: number
+  }
 }) {
   const cards = [
     { label: 'Total tasks', value: stats.total, accent: 'text-ink dark:text-paper' },
-    { label: 'To do', value: stats.todo, accent: 'text-slate-500 dark:text-slate-300' },
-    { label: 'In progress', value: stats.inProgress, accent: 'text-teal-800 dark:text-teal-300' },
+    { label: 'Active', value: stats.todo + stats.inProgress + stats.onHold, accent: 'text-teal-800 dark:text-teal-300' },
     { label: 'Completed', value: stats.completed, accent: 'text-emerald-600 dark:text-emerald-300' },
+    { label: 'Overdue', value: stats.overdue, accent: 'text-red-500' },
+    { label: 'Due today', value: stats.dueToday, accent: 'text-gold-500' },
+    { label: 'Due this week', value: stats.dueThisWeek, accent: 'text-teal-800 dark:text-teal-300' },
+    { label: 'Subtasks done', value: stats.subtasksCompleted, accent: 'text-emerald-600 dark:text-emerald-300' },
   ]
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-7">
       {cards.map((c) => (
         <div
           key={c.label}

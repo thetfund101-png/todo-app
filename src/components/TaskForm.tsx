@@ -1,6 +1,6 @@
 import { FormEvent, useState } from 'react'
-import { Task, TaskPriority, TaskStatus, STATUS_LABELS, PRIORITY_LABELS, FollowUp } from '../types/task'
-import { nowISO } from '../utils/dateUtils'
+import { Subtask, Task, TaskPriority, TaskStatus, STATUS_LABELS, PRIORITY_LABELS, FollowUp } from '../types/task'
+import { formatDate, nowISO } from '../utils/dateUtils'
 import { addFollowUp, deleteFollowUp, toggleFollowUp } from '../utils/taskUtils'
 
 export function TaskForm({
@@ -21,6 +21,8 @@ export function TaskForm({
   const [category, setCategory] = useState(initial.category)
   const [customCategory, setCustomCategory] = useState('')
   const [dueDate, setDueDate] = useState(initial.dueDate ?? '')
+  const [subtasks, setSubtasks] = useState<Subtask[]>(initial.subtasks ?? [])
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState('')
   const [followUps, setFollowUps] = useState<FollowUp[]>(initial.followUps)
   const [newFollowUpDate, setNewFollowUpDate] = useState('')
   const [newFollowUpNote, setNewFollowUpNote] = useState('')
@@ -43,6 +45,7 @@ export function TaskForm({
       status,
       category: finalCategory,
       dueDate: dueDate || null,
+      subtasks,
       followUps,
       updatedAt: nowISO(),
     })
@@ -59,6 +62,13 @@ export function TaskForm({
     setFollowUps(updated.followUps)
     setNewFollowUpDate('')
     setNewFollowUpNote('')
+  }
+
+  function handleAddSubtask() {
+    const subtaskTitle = newSubtaskTitle.trim()
+    if (!subtaskTitle) return
+    setSubtasks((current) => [...current, { id: crypto.randomUUID(), title: subtaskTitle, done: false }])
+    setNewSubtaskTitle('')
   }
 
   return (
@@ -127,6 +137,83 @@ export function TaskForm({
       </div>
 
       <div className="border-t border-slate-400/15 pt-4 dark:border-teal-800">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="font-medium text-ink dark:text-paper">Subtasks</h3>
+          <span className="text-xs text-slate-500 dark:text-slate-400">
+            {subtasks.filter((subtask) => subtask.done).length} of {subtasks.length} completed
+          </span>
+        </div>
+        {subtasks.length > 0 && (
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-400/15" role="progressbar"
+            aria-valuenow={subtasks.filter((subtask) => subtask.done).length}
+            aria-valuemin={0}
+            aria-valuemax={subtasks.length}
+            aria-label="Subtask completion">
+            <div
+              className="h-full rounded-full bg-teal-700 transition-all"
+              style={{ width: `${(subtasks.filter((subtask) => subtask.done).length / subtasks.length) * 100}%` }}
+            />
+          </div>
+        )}
+        {subtasks.length > 0 && (
+          <div className="mt-2 flex flex-col gap-2">
+            {subtasks.map((subtask) => (
+              <div key={subtask.id} className="flex items-center gap-2 rounded-lg bg-paper/70 px-3 py-2 dark:bg-teal-800/60">
+                <input
+                  type="checkbox"
+                  checked={subtask.done}
+                  onChange={() => setSubtasks((current) =>
+                    current.map((item) => item.id === subtask.id ? { ...item, done: !item.done } : item),
+                  )}
+                  aria-label={`Mark ${subtask.title} as ${subtask.done ? 'incomplete' : 'complete'}`}
+                  className="accent-teal-700"
+                />
+                <input
+                  value={subtask.title}
+                  onChange={(e) => setSubtasks((current) =>
+                    current.map((item) => item.id === subtask.id ? { ...item, title: e.target.value } : item),
+                  )}
+                  aria-label="Subtask title"
+                  className={`min-w-0 flex-1 bg-transparent text-sm text-ink focus:outline-none dark:text-paper ${subtask.done ? 'line-through opacity-50' : ''}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setSubtasks((current) => current.filter((item) => item.id !== subtask.id))}
+                  aria-label={`Delete ${subtask.title}`}
+                  className="text-xs text-red-500 hover:text-red-700"
+                >
+                  Delete
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="mt-3 flex gap-2">
+          <input
+            value={newSubtaskTitle}
+            onChange={(e) => setNewSubtaskTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                handleAddSubtask()
+              }
+            }}
+            placeholder="Add a subtask"
+            aria-label="New subtask title"
+            className="min-w-0 flex-1 rounded-lg border border-slate-400/30 bg-transparent px-3 py-2 text-sm text-ink placeholder:text-slate-400 focus:border-teal-700 dark:text-paper"
+          />
+          <button
+            type="button"
+            onClick={handleAddSubtask}
+            disabled={!newSubtaskTitle.trim()}
+            className="rounded-lg bg-gold-500 px-3 py-2 text-sm font-medium text-white hover:bg-gold-400 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Add
+          </button>
+        </div>
+      </div>
+
+      <div className="border-t border-slate-400/15 pt-4 dark:border-teal-800">
         <h3 className="font-medium text-ink dark:text-paper">Follow-ups</h3>
         {followUps.length > 0 && (
           <div className="mt-2 flex flex-col gap-2">
@@ -179,6 +266,11 @@ export function TaskForm({
             Add
           </button>
         </div>
+      </div>
+
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
+        <span>Created {formatDate(initial.createdAt.slice(0, 10))}</span>
+        <span>Updated {formatDate(initial.updatedAt.slice(0, 10))}</span>
       </div>
 
       <div className="grid grid-cols-2 gap-4">

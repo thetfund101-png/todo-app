@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Task, TaskPriority, DEFAULT_CATEGORIES } from './types/task'
 import { useLocalStorage } from './hooks/useLocalStorage'
-import { createEmptyTask } from './utils/taskUtils'
+import { createEmptyTask, normalizeTask } from './utils/taskUtils'
 import { nowISO } from './utils/dateUtils'
 import { Sidebar, MobileNav, View } from './components/Sidebar'
 import { Topbar, Theme } from './components/Topbar'
@@ -11,15 +11,21 @@ import { SettingsPage } from './components/SettingsPage'
 import { Modal } from './components/Modal'
 import { TaskForm } from './components/TaskForm'
 import { ToastStack, ToastItem } from './components/Toast'
+import { CalendarPage } from './components/CalendarPage'
 
 const PAGE_TITLES: Record<View, string> = {
   dashboard: 'Dashboard',
   tasks: 'My tasks',
+  calendar: 'Calendar',
   settings: 'Settings',
 }
 
 export default function App() {
-  const [tasks, setTasks] = useLocalStorage<Task[]>('thet-fund-tasks', [])
+  const [tasks, setTasks] = useLocalStorage<Task[]>(
+    'thet-fund-tasks',
+    [],
+    (stored) => Array.isArray(stored) ? stored.map((task) => normalizeTask(task)) : [],
+  )
   const [customCategories, setCustomCategories] = useLocalStorage<string[]>('thet-fund-categories', [])
   const [theme, setTheme] = useLocalStorage<Theme>('thet-fund-theme', 'system')
   const [defaultPriority, setDefaultPriority] = useLocalStorage<TaskPriority>('thet-fund-default-priority', 'medium')
@@ -31,13 +37,6 @@ export default function App() {
   const [toasts, setToasts] = useState<ToastItem[]>([])
 
   const categories = Array.from(new Set([...DEFAULT_CATEGORIES, ...customCategories]))
-
-  useEffect(() => {
-    const needsNormalization = tasks.some((task) => !Array.isArray(task.followUps))
-    if (needsNormalization) {
-      setTasks((current) => current.map((task) => ({ ...task, followUps: task.followUps ?? [] })))
-    }
-  }, [tasks, setTasks])
 
   // apply theme to <html> element
   useEffect(() => {
@@ -108,7 +107,9 @@ export default function App() {
   }
 
   function handleImport(imported: Task[]) {
-    const valid = imported.filter((t) => t && typeof t.title === 'string')
+    const valid = imported
+      .filter((task) => task && typeof task.title === 'string')
+      .map((task) => normalizeTask(task))
     setTasks(valid)
     valid.forEach((t) => registerCategory(t.category))
     pushToast(`Imported ${valid.length} task${valid.length === 1 ? '' : 's'}`)
@@ -119,14 +120,21 @@ export default function App() {
     pushToast('All tasks deleted', 'info')
   }
 
-  function openCreateModal() {
-    setEditingTask(createEmptyTask({ priority: defaultPriority, category: defaultCategory }))
+  function openCreateModal(dueDate?: string) {
+    setEditingTask(createEmptyTask({ priority: defaultPriority, category: defaultCategory, dueDate }))
     setIsCreating(true)
   }
 
   function openEditModal(task: Task) {
     setEditingTask(task)
     setIsCreating(false)
+  }
+
+  function handleMoveTask(id: string, dueDate: string) {
+    setTasks((prev) => prev.map((task) =>
+      task.id === id ? { ...task, dueDate, updatedAt: nowISO() } : task,
+    ))
+    pushToast('Task date updated')
   }
 
   return (
@@ -158,6 +166,14 @@ export default function App() {
               onAddFollowUp={openEditModal}
             />
           )}
+          {view === 'calendar' && (
+            <CalendarPage
+              tasks={tasks}
+              onEdit={openEditModal}
+              onCreate={openCreateModal}
+              onMoveTask={handleMoveTask}
+            />
+          )}
           {view === 'settings' && (
             <SettingsPage
               theme={theme}
@@ -178,7 +194,7 @@ export default function App() {
       <MobileNav view={view} onNavigate={setView} />
 
       <button
-        onClick={openCreateModal}
+        onClick={() => openCreateModal()}
         aria-label="New task"
         className="fixed bottom-20 right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-gold-500 text-white shadow-lg hover:bg-gold-400 md:hidden"
       >

@@ -3,25 +3,28 @@
 A frontend-only office task manager. No backend, no database — all tasks are
 stored in the browser via `localStorage`, per the project's SRS.
 
-## What's included in this MVP
+## What's included
 
-- Dashboard with live stats (total / to do / in progress / completed), an
-  "Needs attention" list of overdue and due-today tasks, and recently
-  updated tasks.
+- Dashboard with live task and subtask statistics, a "Needs attention" list
+  of overdue and due-today tasks, and recently updated tasks.
 - Full task CRUD: create, edit, delete, duplicate, mark complete.
 - Priority (low/medium/high/urgent), status (to do/in progress/completed/on
   hold), category (built-in list + custom categories), and due dates.
-- Search, filter (status/priority/category), and sort (newest, oldest, due
-  date, priority, alphabetical).
+- Subtask creation, editing, deletion, completion tracking, and progress.
+- Monthly calendar with overdue/today/upcoming indicators, task creation on a
+  selected date, and drag-and-drop rescheduling.
+- Search across task details and subtasks, quick filters (active, completed,
+  overdue, due today, upcoming), status/priority/category filters, and sort
+  (newest, oldest, due date, priority, alphabetical).
 - Import/export as JSON, plus export as CSV, and a "delete everything"
   option with a confirmation step.
 - Light / dark / system theme, saved to `localStorage`.
 - Responsive layout: sidebar nav on desktop, bottom nav + floating "+" on
   mobile.
 
-Not yet built (flagged as follow-ups in the SRS): calendar view and
-subtasks. The `Task` type already has a `subtasks` field so this can be
-added later without a data migration.
+Existing task data is normalized when read from localStorage: missing
+subtasks and follow-ups default to empty lists, and missing timestamps,
+categories, or other fields receive safe defaults without discarding tasks.
 
 ## Running locally
 
