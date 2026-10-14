@@ -1,0 +1,576 @@
+openapi: 3.1.0
+info:
+  title: THET Fund Task Tracker API
+  version: 1.0.0
+  description: Cookie-authenticated, role-aware task management API.
+servers:
+  - url: http://localhost:4000/api/v1
+security:
+  - accessCookie: []
+paths:
+  /auth/csrf:
+    get:
+      security: []
+      summary: Issue a CSRF cookie and token for the current browser.
+      responses:
+        '200':
+          description: CSRF token issued.
+  /auth/login:
+    post:
+      security: []
+      summary: Sign in and issue short-lived access and refresh cookies.
+      parameters:
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [email, password]
+              properties:
+                email: { type: string, format: email, maxLength: 254 }
+                password: { type: string, minLength: 1, maxLength: 128 }
+      responses:
+        '200': { description: Authenticated. }
+        '401': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+  /auth/logout:
+    post:
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CsrfHeader'
+      responses:
+        '204': { description: Refresh session revoked. }
+  /auth/refresh:
+    post:
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CsrfHeader'
+      responses:
+        '200': { description: Cookies rotated. }
+        '401': { $ref: '#/components/responses/Error' }
+  /auth/me:
+    get:
+      responses:
+        '200': { description: Current active user and role. }
+        '401': { $ref: '#/components/responses/Error' }
+  /auth/change-password:
+    post:
+      parameters:
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword: { type: string, maxLength: 128 }
+                newPassword: { type: string, minLength: 12, maxLength: 128 }
+      responses:
+        '204': { description: Password changed; existing sessions revoked. }
+  /tasks:
+    get:
+      parameters:
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }
+        - { name: search, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/TaskStatus' } }
+        - { name: priority, in: query, schema: { $ref: '#/components/schemas/TaskPriority' } }
+        - { name: category, in: query, schema: { type: string, maxLength: 80 } }
+        - { name: when, in: query, schema: { type: string, enum: [overdue, today, upcoming] } }
+        - { name: sort, in: query, schema: { type: string, enum: [newest, oldest, due, priority, alpha] } }
+      responses:
+        '200': { description: Paginated tasks visible to the current role. }
+    post:
+      parameters:
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TaskInput' }
+      responses:
+        '201': { description: Task created. }
+  /tasks/{taskId}:
+    parameters:
+      - $ref: '#/components/parameters/TaskId'
+    get:
+      responses:
+        '200': { description: Visible task. }
+        '404': { $ref: '#/components/responses/Error' }
+    put:
+      parameters:
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TaskInput' }
+      responses:
+        '200': { description: Updated task. }
+    delete:
+      parameters:
+        - $ref: '#/components/parameters/CsrfHeader'
+      responses:
+        '204': { description: Task soft-deleted. }
+  /tasks/{taskId}/duplicate:
+    post:
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SubtaskInput' }
+      responses:
+        '201': { description: Duplicated task. }
+  /tasks/{taskId}/complete:
+    patch:
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [completed]
+              properties:
+                completed: { type: boolean }
+      responses:
+        '200': { description: Completion state updated. }
+  /tasks/{taskId}/reschedule:
+    patch:
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [dueDate]
+              properties:
+                dueDate: { type: [string, 'null'], format: date }
+      responses:
+        '200': { description: Due date updated. }
+  /tasks/{taskId}/subtasks:
+    get:
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+      responses:
+        '200': { description: Visible task subtasks. }
+    post:
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FollowUpInput' }
+      responses:
+        '201': { description: Subtask created. }
+  /tasks/{taskId}/subtasks/{childId}:
+    parameters:
+      - $ref: '#/components/parameters/TaskId'
+      - $ref: '#/components/parameters/ChildId'
+    put:
+      parameters:
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SubtaskUpdate' }
+      responses:
+        '200': { description: Subtask updated. }
+        '404': { $ref: '#/components/responses/Error' }
+    delete:
+      parameters:
+        - $ref: '#/components/parameters/CsrfHeader'
+      responses:
+        '200': { description: Subtask deleted. }
+        '404': { $ref: '#/components/responses/Error' }
+  /tasks/{taskId}/follow-ups:
+    get:
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+      responses:
+        '200': { description: Visible task follow-ups. }
+    post:
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+        - $ref: '#/components/parameters/CsrfHeader'
+      responses:
+        '201': { description: Follow-up created. }
+  /tasks/{taskId}/follow-ups/{childId}:
+    parameters:
+      - $ref: '#/components/parameters/TaskId'
+      - $ref: '#/components/parameters/ChildId'
+    put:
+      parameters:
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FollowUpUpdate' }
+      responses:
+        '200': { description: Follow-up updated. }
+        '404': { $ref: '#/components/responses/Error' }
+    delete:
+      parameters:
+        - $ref: '#/components/parameters/CsrfHeader'
+      responses:
+        '200': { description: Follow-up deleted. }
+        '404': { $ref: '#/components/responses/Error' }
+  /categories:
+    get:
+      responses:
+        '200': { description: Built-in and custom categories. }
+    post:
+      parameters:
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CategoryInput' }
+      responses:
+        '201': { description: Custom category created. }
+  /categories/{categoryId}:
+    put:
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CategoryInput' }
+      responses:
+        '200': { description: Admin updated category. }
+    delete:
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/CsrfHeader'
+      responses:
+        '204': { description: Unused custom category deleted. }
+  /users:
+    get:
+      parameters:
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }
+        - { name: search, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: role, in: query, schema: { $ref: '#/components/schemas/UserRole' } }
+        - { name: isActive, in: query, schema: { type: string, enum: ['true', 'false'] } }
+      responses:
+        '200': { description: Paginated team directory for managers and admins. }
+    post:
+      parameters:
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateUserInput' }
+      responses:
+        '201': { description: Admin created a user. }
+  /users/{userId}:
+    get:
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Admin user record (never includes password hash). }
+    put:
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateUserInput' }
+      responses:
+        '200': { description: Admin updated user profile and role. }
+    delete:
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [isActive]
+              properties:
+                isActive: { type: boolean }
+      responses:
+        '204': { description: Admin deactivated user and revoked sessions. }
+  /users/{userId}/activation:
+    patch:
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [password]
+              properties:
+                password: { type: string, minLength: 12, maxLength: 128 }
+      responses:
+        '200': { description: Admin changed active state. }
+  /users/{userId}/password:
+    patch:
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/CsrfHeader'
+      responses:
+        '204': { description: Admin reset password and revoked sessions. }
+  /dashboard/summary:
+    get:
+      responses:
+        '200': { description: SQL-computed, role-scoped task and follow-up summary. }
+  /settings:
+    get:
+      responses:
+        '200': { description: Current user's preferences. }
+    put:
+      parameters:
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SettingsInput' }
+      responses:
+        '200': { description: Current user's preferences saved. }
+  /exports/tasks:
+    get:
+      parameters:
+        - { name: format, in: query, required: true, schema: { type: string, enum: [json, csv, docx] } }
+      responses:
+        '200': { description: Role-scoped task export. }
+  /exports/tasks/import:
+    post:
+      parameters:
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '201': { description: Validated tasks appended to the current account. }
+  /tasks/bulk-reset:
+    post:
+      parameters:
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [currentPassword]
+              properties:
+                currentPassword: { type: string, minLength: 1, maxLength: 128 }
+      responses:
+        '200': { description: Admin soft-deleted all active tasks after password reconfirmation. }
+  /admin/audit-logs:
+    get:
+      parameters:
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }
+        - { name: action, in: query, schema: { type: string, maxLength: 80 } }
+        - { name: entityType, in: query, schema: { type: string, maxLength: 80 } }
+        - { name: userId, in: query, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Admin audit log page. }
+components:
+  securitySchemes:
+    accessCookie:
+      type: apiKey
+      in: cookie
+      name: thet_access
+  parameters:
+    CsrfHeader:
+      name: X-CSRF-Token
+      in: header
+      required: true
+      schema: { type: string }
+    TaskId:
+      name: taskId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ChildId:
+      name: childId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+  responses:
+    Error:
+      description: Standard API error.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [error]
+            properties:
+              error:
+                type: object
+                required: [code, message]
+                properties:
+                  code: { type: string }
+                  message: { type: string }
+                  details: {}
+  schemas:
+    UserRole:
+      type: string
+      enum: [admin, manager, staff]
+    CategoryInput:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 80 }
+    CreateUserInput:
+      type: object
+      additionalProperties: false
+      required: [name, email, role, password]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 120 }
+        email: { type: string, format: email, maxLength: 254 }
+        role: { $ref: '#/components/schemas/UserRole' }
+        password: { type: string, minLength: 12, maxLength: 128 }
+    UpdateUserInput:
+      type: object
+      additionalProperties: false
+      required: [name, email, role]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 120 }
+        email: { type: string, format: email, maxLength: 254 }
+        role: { $ref: '#/components/schemas/UserRole' }
+    SettingsInput:
+      type: object
+      additionalProperties: false
+      required: [theme, defaultPriority, defaultCategoryId]
+      properties:
+        theme: { type: string, enum: [light, dark, system] }
+        defaultPriority: { $ref: '#/components/schemas/TaskPriority' }
+        defaultCategoryId: { type: string, format: uuid }
+    SubtaskUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        title: { type: string, minLength: 1, maxLength: 200 }
+        done: { type: boolean }
+    SubtaskInput:
+      type: object
+      additionalProperties: false
+      required: [title]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 200 }
+        done: { type: boolean }
+    FollowUpInput:
+      type: object
+      additionalProperties: false
+      required: [date]
+      properties:
+        date: { type: string, format: date }
+        note: { type: string, maxLength: 1000 }
+        completed: { type: boolean }
+    FollowUpUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        date: { type: string, format: date }
+        note: { type: string, maxLength: 1000 }
+        completed: { type: boolean }
+    TaskStatus:
+      type: string
+      enum: [todo, in-progress, completed, on-hold]
+    TaskPriority:
+      type: string
+      enum: [low, medium, high, urgent]
+    TaskInput:
+      type: object
+      additionalProperties: false
+      required: [title, category]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 200 }
+        description: { type: string, maxLength: 10000 }
+        status: { $ref: '#/components/schemas/TaskStatus' }
+        priority: { $ref: '#/components/schemas/TaskPriority' }
+        category: { type: string, minLength: 1, maxLength: 80 }
+        dueDate: { type: [string, 'null'], format: date }
+        assignedTo: { type: [string, 'null'], format: uuid }
+        subtasks:
+          type: array
+          maxItems: 100
+          items:
+            type: object
+            additionalProperties: false
+            required: [title]
+            properties:
+              id: { type: string, format: uuid }
+              title: { type: string, minLength: 1, maxLength: 200 }
+              done: { type: boolean }
+        followUps:
+          type: array
+          maxItems: 100
+          items:
+            type: object
+            additionalProperties: false
+            required: [date]
+            properties:
+              id: { type: string, format: uuid }
+              date: { type: string, format: date }
+              note: { type: string, maxLength: 1000 }
+              completed: { type: boolean }
