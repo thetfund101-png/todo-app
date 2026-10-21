@@ -18,7 +18,7 @@ export class ApiError extends Error {
   }
 }
 
-const apiBase = (import.meta.env.VITE_API_BASE_URL || '/api/v1').replace(/\/+$/, '')
+const apiBase = (import.meta.env.VITE_API_BASE_URL || 'https://task-tracker-backend-0tp6.onrender.com/api/v1').replace(/\/+$/, '')
 const apiUrl = (path: string) => `${apiBase}${path}`
 let csrfToken: string | null = null
 let csrfRequest: Promise<string> | null = null
